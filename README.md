@@ -1,2 +1,0 @@
-# Elementos
-Hackathon submission

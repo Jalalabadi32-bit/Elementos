@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicRank — City Reputation System</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D49A;
+    --obsidian: #0A0A0F;
+    --deep: #0F0F1A;
+    --surface: #14141F;
+    --surface2: #1C1C2E;
+    --border: rgba(201,168,76,0.15);
+    --text: #E8E8F0;
+    --muted: #7070A0;
+    --tier1: #C9A84C;
+    --tier2: #9DD9B8;
+    --tier3: #7EB8E0;
+    --tier4: #A88FD4;
+    --tier5: #E07070;
+    --green: #4ECDC4;
+    --red: #E07090;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--obsidian);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BACKGROUND GRID */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* GLOW ORBS */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb1 { width: 500px; height: 500px; background: rgba(201,168,76,0.06); top: -200px; right: -100px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(78,205,196,0.05); bottom: 100px; left: -150px; }
+
+  /* ===== LANDING PAGE ===== */
+  #landing {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 60px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--gold);
+  }
+
+  .logo-sub {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+
+  /* HERO */
+  .hero {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 80px 60px;
+    gap: 80px;
+  }
+
+  .hero-left { flex: 1; max-width: 600px; }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    border-radius: 2px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 72px;
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 24px;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-desc {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 460px;
+    margin-bottom: 48px;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--obsidian);
+    border: none;
+    padding: 14px 36px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+  }
+
+  .btn-primary:hover {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(201,168,76,0.3);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 14px 36px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+  }
+
+  .btn-ghost:hover { color: var(--text); border-color: rgba(201,168,76,0.4); }
+
+  /* TIER VISUAL */
+  .hero-right { flex: 0 0 340px; }
+
+  .tier-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tier-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-radius: 4px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .tier-card:hover {
+    transform: translateX(8px);
+    border-color: rgba(201,168,76,0.3);
+    background: var(--surface2);
+  }
+
+  .tier-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    min-width: 36px;
+  }
+
+  .tier-info { flex: 1; }
+  .tier-name { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .tier-range { font-size: 10px; color: var(--muted); }
+
+  .tier-bar {
+    width: 60px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+
+  .tier-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0;
+  }
+
+  .stat-cell {
+    background: var(--deep);
+    padding: 32px 60px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ===== AUTH SECTION ===== */
+  #auth-section {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(20px);
+    align-items: center;
+    justify-content: center;
+  }
+
+  #auth-section.active { display: flex; }
+
+  .auth-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 440px;
+    overflow: hidden;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .auth-header-tag {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .auth-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+  }
+
+  .auth-body { padding: 32px 40px; }
+
+  .form-group { margin-bottom: 20px; }
+
+  .form-label {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .form-input:focus { border-color: var(--gold); }
+
+  .demo-accounts {
+    background: rgba(201,168,76,0.05);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+
+  .demo-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .demo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .demo-item:last-child { border-bottom: none; }
+  .demo-item:hover .demo-id { color: var(--gold); }
+
+  .demo-id {
+    font-size: 11px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .demo-tier-badge {
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  .login-btn {
+    width: 100%;
+    background: var(--gold);
+    color: var(--obsidian);
+    border: none;
+    padding: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+  }
+
+  .login-btn:hover { background: var(--gold-light); }
+
+  .auth-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+
+  .auth-close:hover { color: var(--text); }
+
+  /* ===== DASHBOARD ===== */
+  #dashboard {
+    display: none;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+  }
+
+  #dashboard.active { display: block; }
+
+  .dash-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 60px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .dash-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    border: 2px solid;
+  }
+
+  .dash-user-info { }
+  .dash-username { font-size: 13px; font-weight: 500; }
+  .dash-id { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .logout-btn:hover { color: var(--text); border-color: rgba(201,168,76,0.3); }
+
+  .dash-content {
+    padding: 48px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* SCORE HERO */
+  .score-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
+  .score-main {
+    grid-column: 1 / 2;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-main::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .score-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .score-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 88px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .score-change {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tier-badge-large {
+    grid-column: 2 / 3;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tier-badge-large::after {
+    content: attr(data-tier-num);
+    position: absolute;
+    right: -10px;
+    bottom: -20px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 140px;
+    opacity: 0.05;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .points-breakdown {
+    grid-column: 3 / 4;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 36px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-key { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .breakdown-val { font-size: 14px; font-weight: 500; }
+
+  /* PROGRESS BAR */
+  .tier-progress-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .progress-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+  }
+
+  .all-tiers {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .tier-pip {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .tier-pip.active { }
+
+  .tier-pip-label {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .tier-items {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .tier-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .tier-item.current {
+    border-width: 2px;
+    background: rgba(201,168,76,0.05);
+  }
+
+  .tier-item-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .tier-item-name {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .tier-item-range {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ACTIVITY */
+  .section-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .section-head {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-head-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .activity-list { }
+
+  .activity-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+  .activity-item:hover { background: rgba(201,168,76,0.03); }
+
+  .act-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .act-icon.pos { background: rgba(78,205,196,0.1); }
+  .act-icon.neg { background: rgba(224,112,144,0.1); }
+  .act-icon.peer { background: rgba(201,168,76,0.1); }
+
+  .act-info { flex: 1; }
+  .act-title { font-size: 12px; margin-bottom: 3px; }
+  .act-date { font-size: 10px; color: var(--muted); }
+
+  .act-pts {
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  .act-pts.pos { color: var(--green); }
+  .act-pts.neg { color: var(--red); }
+
+  /* PEERS */
+  .peer-list { }
+
+  .peer-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .peer-item:last-child { border-bottom: none; }
+  .peer-item:hover { background: rgba(201,168,76,0.03); }
+
+  .peer-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .peer-name { font-size: 12px; flex: 1; }
+  .peer-score-val { font-size: 12px; color: var(--muted); }
+
+  /* AWARD PEER SECTION */
+  .award-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+
+  .award-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap: 16px;
+    align-items: end;
+    margin-top: 24px;
+  }
+
+  .award-select, .award-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .award-select:focus, .award-input:focus { border-color: var(--gold); }
+  .award-select option { background: var(--surface2); }
+
+  .award-btn-pos, .award-btn-neg {
+    padding: 12px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    transition: all 0.3s;
+  }
+
+  .award-btn-pos { background: rgba(78,205,196,0.15); color: var(--green); border: 1px solid rgba(78,205,196,0.3); }
+  .award-btn-pos:hover { background: rgba(78,205,196,0.25); }
+
+  .award-btn-neg { background: rgba(224,112,144,0.15); color: var(--red); border: 1px solid rgba(224,112,144,0.3); }
+  .award-btn-neg:hover { background: rgba(224,112,144,0.25); }
+
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 24px;
+    font-size: 12px;
+    z-index: 200;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(78,205,196,0.4); color: var(--green); }
+  .toast.error { border-color: rgba(224,112,144,0.4); color: var(--red); }
+
+  /* LEADERBOARD */
+  .leaderboard-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .lb-row {
+    display: grid;
+    grid-template-columns: 48px 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row:hover { background: rgba(201,168,76,0.03); }
+  .lb-row.highlight { background: rgba(201,168,76,0.05); }
+
+  .lb-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .lb-rank.top { color: var(--gold); }
+
+  .lb-name { font-size: 13px; }
+  .lb-score-cell { font-size: 13px; font-weight: 500; text-align: right; }
+  .lb-tier-cell { min-width: 80px; text-align: right; }
+
+  .mini-badge {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  @media (max-width: 900px) {
+    nav, .dash-nav { padding: 20px 24px; }
+    .hero { flex-direction: column; padding: 40px 24px; gap: 40px; }
+    .hero-title { font-size: 48px; }
+    .hero-right { flex: none; width: 100%; }
+    .score-hero { grid-template-columns: 1fr; }
+    .score-main, .tier-badge-large, .points-breakdown { grid-column: 1 / 2; }
+    .section-grid { grid-template-columns: 1fr; }
+    .award-form { grid-template-columns: 1fr 1fr; }
+    .dash-content { padding: 24px; }
+    .stat-cell { padding: 24px; }
+    .tier-items { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- LANDING PAGE -->
+<div id="landing">
+  <nav>
+    <div class="logo">
+      <span class="logo-mark">CIVICRANK</span>
+      <span class="logo-sub">City Reputation System</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">How It Works</a></li>
+      <li><a href="#">Tiers</a></li>
+      <li><a href="#">Leaderboard</a></li>
+      <li><a href="#" onclick="openAuth(); return false;">Login</a></li>
+    </ul>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Live · Track 3 Initiative</div>
+      <h1 class="hero-title">Your city.<br><em>Your reputation.</em></h1>
+      <p class="hero-desc">A transparent, city-wide moral reputation system. Every act of civic service, every peer endorsement, every moment of integrity — tracked, rewarded, and recognized. Good citizens rise. Repeat offenders face consequences.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="openAuth()">Access My Score</button>
+        <button class="btn-ghost" onclick="learnMore()">How Scoring Works</button>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="tier-stack">
+        <div class="tier-card">
+          <div class="tier-num" style="color:#C9A84C">Ⅰ</div>
+          <div class="tier-info">
+            <div class="tier-name" style="color:#C9A84C">Exemplar</div>
+            <div class="tier-range">2000+ points</div>
+          </div>
+          <div class="tier-bar"><div class="tier-bar-fill" style="width:100%;background:#C9A84C"></div></div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="color:#9DD9B8">Ⅱ</div>
+          <div class="tier-info">
+            <div class="tier-name" style="color:#9DD9B8">Upstanding</div>
+            <div class="tier-range">1000 – 1999</div>
+          </div>
+          <div class="tier-bar"><div class="tier-bar-fill" style="width:78%;background:#9DD9B8"></div></div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="color:#7EB8E0">Ⅲ</div>
+          <div class="tier-info">
+            <div class="tier-name" style="color:#7EB8E0">Civic</div>
+            <div class="tier-range">400 – 999</div>
+          </div>
+          <div class="tier-bar"><div class="tier-bar-fill" style="width:55%;background:#7EB8E0"></div></div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="color:#A88FD4">Ⅳ</div>
+          <div class="tier-info">
+            <div class="tier-name" style="color:#A88FD4">Standard</div>
+            <div class="tier-range">0 – 399</div>
+          </div>
+          <div class="tier-bar"><div class="tier-bar-fill" style="width:30%;background:#A88FD4"></div></div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="color:#E07070">Ⅴ</div>
+          <div class="tier-info">
+            <div class="tier-name" style="color:#E07070">Flagged</div>
+            <div class="tier-range">Below 0</div>
+          </div>
+          <div class="tier-bar"><div class="tier-bar-fill" style="width:12%;background:#E07070"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-cell">
+      <div class="stat-num">84,291</div>
+      <div class="stat-label">Registered Citizens</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">2.4M</div>
+      <div class="stat-label">Points Awarded</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">12,400</div>
+      <div class="stat-label">Peer Endorsements</div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="auth-section">
+  <div class="auth-modal" style="position:relative;">
+    <button class="auth-close" onclick="closeAuth()">×</button>
+    <div class="auth-header">
+      <div class="auth-header-tag">Citizen Login</div>
+      <div class="auth-title">Access your profile</div>
+    </div>
+    <div class="auth-body">
+      <div class="demo-accounts">
+        <div class="demo-title">Demo Accounts — Click to autofill</div>
+        <div class="demo-item" onclick="autofill('ADA-7741','civic2024')">
+          <span class="demo-id">ADA-7741 · Adaora Nwosu</span>
+          <span class="demo-tier-badge" style="background:rgba(201,168,76,0.15);color:#C9A84C">Exemplar</span>
+        </div>
+        <div class="demo-item" onclick="autofill('KIR-3302','civic2024')">
+          <span class="demo-id">KIR-3302 · Kiran Mehta</span>
+          <span class="demo-tier-badge" style="background:rgba(157,217,184,0.15);color:#9DD9B8">Upstanding</span>
+        </div>
+        <div class="demo-item" onclick="autofill('MRC-5510','civic2024')">
+          <span class="demo-id">MRC-5510 · Marcos Ferreira</span>
+          <span class="demo-tier-badge" style="background:rgba(126,184,224,0.15);color:#7EB8E0">Civic</span>
+        </div>
+        <div class="demo-item" onclick="autofill('LIN-9920','civic2024')">
+          <span class="demo-id">LIN-9920 · Lina Vasquez</span>
+          <span class="demo-tier-badge" style="background:rgba(224,112,112,0.15);color:#E07070">Flagged</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="citizen-id">Citizen ID</label>
+        <input type="text" id="citizen-id" class="form-input" placeholder="e.g. ADA-7741">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="pass">Passphrase</label>
+        <input type="password" id="pass" class="form-input" placeholder="civic2024">
+      </div>
+      <button class="login-btn" onclick="doLogin()">Enter CivicRank</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <nav class="dash-nav">
+    <div class="logo">
+      <span class="logo-mark">CIVICRANK</span>
+    </div>
+    <div class="dash-user">
+      <div class="avatar" id="dash-avatar"></div>
+      <div class="dash-user-info">
+        <div class="dash-username" id="dash-name"></div>
+        <div class="dash-id" id="dash-cid"></div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </nav>
+
+  <div class="dash-content">
+    <!-- SCORE SECTION -->
+    <div class="section-label">Reputation Overview</div>
+    <div class="score-hero">
+      <div class="score-main" id="score-main-card">
+        <div class="score-label">Total Reputation Score</div>
+        <div class="score-number" id="dash-score">0</div>
+        <div class="score-change" id="dash-change"></div>
+      </div>
+
+      <div class="tier-badge-large" id="tier-card" data-tier-num="I">
+        <div>
+          <div class="score-label">Current Tier</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300;margin-bottom:8px" id="tier-name-big">Exemplar</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.6" id="tier-desc-big"></div>
+        </div>
+        <div>
+          <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Points to next tier</div>
+          <div style="font-size:22px;font-family:'Bebas Neue',sans-serif" id="next-tier-pts">—</div>
+        </div>
+      </div>
+
+      <div class="points-breakdown">
+        <div class="score-label" style="margin-bottom:20px">Score Breakdown</div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Official Points (70%)</span>
+          <span class="breakdown-val" id="bd-official" style="color:var(--green)">—</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Peer Points (30%)</span>
+          <span class="breakdown-val" id="bd-peer" style="color:var(--gold)">—</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Civil Service Bonus</span>
+          <span class="breakdown-val" id="bd-bonus" style="color:#C9A84C">—</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-key">Repeat Offence Penalty</span>
+          <span class="breakdown-val" id="bd-penalty" style="color:var(--red)">—</span>
+        </div>
+        <div class="breakdown-row" style="border-bottom:none">
+          <span class="breakdown-key">Net Score</span>
+          <span class="breakdown-val" id="bd-net">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIER PROGRESS -->
+    <div class="tier-progress-section">
+      <div class="progress-header">
+        <div class="progress-title">Tier Standings</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px">All 5 Tiers</div>
+      </div>
+      <div class="tier-items" id="tier-items-grid"></div>
+    </div>
+
+    <!-- AWARD PEER -->
+    <div class="section-label">Peer Endorsement</div>
+    <div class="award-section">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;margin-bottom:6px">Award Peer Points</div>
+      <div style="font-size:12px;color:var(--muted);">30% of every citizen's score comes from peer-awarded points. Award responsibly.</div>
+      <div class="award-form">
+        <select class="award-select" id="peer-select">
+          <option value="">— Select citizen —</option>
+        </select>
+        <input type="number" class="award-input" id="award-amt" placeholder="Points (1–50)" min="1" max="50">
+        <button class="award-btn-pos" onclick="awardPoints('pos')">+ Award</button>
+        <button class="award-btn-neg" onclick="awardPoints('neg')">− Deduct</button>
+      </div>
+    </div>
+
+    <!-- ACTIVITY & PEERS -->
+    <div class="section-label">Activity & Network</div>
+    <div class="section-grid">
+      <div class="section-card">
+        <div class="section-head">
+          <span class="section-head-title">Recent Activity</span>
+          <span style="font-size:10px;color:var(--muted)">Last 30 days</span>
+        </div>
+        <div class="activity-list" id="activity-list"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-head">
+          <span class="section-head-title">Peer Network</span>
+          <span style="font-size:10px;color:var(--muted)" id="peer-count"></span>
+        </div>
+        <div class="peer-list" id="peer-list"></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="section-label">City Leaderboard</div>
+    <div class="leaderboard-section">
+      <div class="section-head">
+        <span class="section-head-title">Top Citizens — This Month</span>
+        <span style="font-size:10px;color:var(--muted)">City-wide ranking</span>
+      </div>
+      <div id="leaderboard"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==============================
+// DATA
+// ==============================
+const CITIZENS = {
+  'ADA-7741': {
+    name: 'Adaora Nwosu', pass: 'civic2024',
+    score: 2480, officialPts: 1820, peerPts: 660, bonus: 800, penalty: 0,
+    tier: 1, change: '+120 this month',
+    bio: 'Organized 3 community clean-ups, mentored youth programs.',
+    activity: [
+      { title: 'Community Blood Drive (Organizer)', pts: +200, type: 'pos', date: 'Feb 18, 2026', icon: '🩸' },
+      { title: 'Peer endorsement from KIR-3302', pts: +30, type: 'peer', date: 'Feb 15, 2026', icon: '⭐' },
+      { title: 'Neighbourhood Patrol Volunteer', pts: +80, type: 'pos', date: 'Feb 10, 2026', icon: '🛡️' },
+      { title: 'Literacy Program Teaching (8hrs)', pts: +150, type: 'pos', date: 'Feb 4, 2026', icon: '📚' },
+      { title: 'Peer endorsement from MRC-5510', pts: +20, type: 'peer', date: 'Jan 29, 2026', icon: '⭐' },
+    ],
+    peers: ['KIR-3302','MRC-5510','LIN-9920']
+  },
+  'KIR-3302': {
+    name: 'Kiran Mehta', pass: 'civic2024',
+    score: 1340, officialPts: 960, peerPts: 380, bonus: 200, penalty: 0,
+    tier: 2, change: '+45 this month',
+    bio: 'Regular food bank volunteer and neighbourhood watch participant.',
+    activity: [
+      { title: 'Food Bank Volunteer (4hrs)', pts: +60, type: 'pos', date: 'Feb 17, 2026', icon: '🍱' },
+      { title: 'Peer endorsement from ADA-7741', pts: +25, type: 'peer', date: 'Feb 12, 2026', icon: '⭐' },
+      { title: 'Reported Illegal Dumping', pts: +40, type: 'pos', date: 'Feb 6, 2026', icon: '🗑️' },
+      { title: 'Community Garden Planting', pts: +35, type: 'pos', date: 'Jan 28, 2026', icon: '🌱' },
+    ],
+    peers: ['ADA-7741','MRC-5510']
+  },
+  'MRC-5510': {
+    name: 'Marcos Ferreira', pass: 'civic2024',
+    score: 612, officialPts: 450, peerPts: 162, bonus: 0, penalty: 0,
+    tier: 3, change: '+18 this month',
+    bio: 'Participates in monthly park clean-ups and local elections.',
+    activity: [
+      { title: 'Park Clean-Up Participation', pts: +30, type: 'pos', date: 'Feb 14, 2026', icon: '🌳' },
+      { title: 'Voted in Local Election', pts: +15, type: 'pos', date: 'Feb 3, 2026', icon: '🗳️' },
+      { title: 'Reported Pothole', pts: +10, type: 'pos', date: 'Jan 30, 2026', icon: '🚧' },
+    ],
+    peers: ['ADA-7741','KIR-3302']
+  },
+  'LIN-9920': {
+    name: 'Lina Vasquez', pass: 'civic2024',
+    score: -180, officialPts: -230, peerPts: 50, bonus: 0, penalty: -320,
+    tier: 5, change: '-60 this month',
+    bio: '3rd repeat minor offence. Mandatory community service assigned.',
+    activity: [
+      { title: 'Public Disturbance (3rd offense)', pts: -120, type: 'neg', date: 'Feb 16, 2026', icon: '⚠️' },
+      { title: 'Vandalism Citation', pts: -80, type: 'neg', date: 'Feb 8, 2026', icon: '🚫' },
+      { title: 'Littering Fine', pts: -40, type: 'neg', date: 'Jan 22, 2026', icon: '🚫' },
+      { title: 'Peer endorsement from MRC-5510', pts: +10, type: 'peer', date: 'Jan 18, 2026', icon: '⭐' },
+    ],
+    peers: ['ADA-7741','MRC-5510']
+  }
+};
+
+const TIERS = [
+  { num: 'Ⅰ', name: 'Exemplar', range: '2000+', color: '#C9A84C', desc: 'Highest civic standing. Recognized for exceptional civil service and consistent moral leadership.' },
+  { num: 'Ⅱ', name: 'Upstanding', range: '1000–1999', color: '#9DD9B8', desc: 'Outstanding citizen. Regular positive contributions and strong peer recognition.' },
+  { num: 'Ⅲ', name: 'Civic', range: '400–999', color: '#7EB8E0', desc: 'Active participant in community life. Meeting civic expectations consistently.' },
+  { num: 'Ⅳ', name: 'Standard', range: '0–399', color: '#A88FD4', desc: 'General population standing. Room to grow through positive civic engagement.' },
+  { num: 'Ⅴ', name: 'Flagged', range: 'Below 0', color: '#E07070', desc: 'Under civic review. Accumulating violations or repeat offences require remediation.' },
+];
+
+const LEADERBOARD = [
+  { name: 'Adaora Nwosu', id: 'ADA-7741', score: 2480, tier: 1 },
+  { name: 'Emmanuel Osei', id: 'EMM-1192', score: 2210, tier: 1 },
+  { name: 'Priya Sharma', id: 'PRI-8841', score: 1890, tier: 2 },
+  { name: 'Kiran Mehta', id: 'KIR-3302', score: 1340, tier: 2 },
+  { name: 'Sofia Reyes', id: 'SOF-4477', score: 1120, tier: 2 },
+  { name: 'Marcos Ferreira', id: 'MRC-5510', score: 612, tier: 3 },
+  { name: 'Tariq Hossain', id: 'TAR-6690', score: 450, tier: 3 },
+  { name: 'Yuki Tanaka', id: 'YUK-2234', score: 180, tier: 4 },
+  { name: 'Carlos Diaz', id: 'CAR-8820', score: 55, tier: 4 },
+  { name: 'Lina Vasquez', id: 'LIN-9920', score: -180, tier: 5 },
+];
+
+let currentUser = null;
+
+// ==============================
+// AUTH
+// ==============================
+function openAuth() {
+  document.getElementById('auth-section').classList.add('active');
+}
+
+function closeAuth() {
+  document.getElementById('auth-section').classList.remove('active');
+}
+
+function autofill(id, pw) {
+  document.getElementById('citizen-id').value = id;
+  document.getElementById('pass').value = pw;
+}
+
+function doLogin() {
+  const id = document.getElementById('citizen-id').value.trim().toUpperCase();
+  const pw = document.getElementById('pass').value.trim();
+  const user = CITIZENS[id];
+  if (!user || user.pass !== pw) {
+    showToast('Invalid credentials. Try a demo account.', 'error');
+    return;
+  }
+  currentUser = { id, ...user };
+  closeAuth();
+  document.getElementById('landing').style.display = 'none';
+  buildDashboard();
+  document.getElementById('dashboard').classList.add('active');
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('landing').style.flexDirection = 'column';
+}
+
+// ==============================
+// DASHBOARD BUILD
+// ==============================
+function buildDashboard() {
+  const u = currentUser;
+  const tier = TIERS[u.tier - 1];
+  const tierColor = tier.color;
+
+  // Nav
+  document.getElementById('dash-avatar').textContent = u.name[0];
+  document.getElementById('dash-avatar').style.borderColor = tierColor;
+  document.getElementById('dash-avatar').style.color = tierColor;
+  document.getElementById('dash-name').textContent = u.name;
+  document.getElementById('dash-cid').textContent = u.id;
+
+  // Score
+  document.getElementById('dash-score').textContent = u.score.toLocaleString();
+  document.getElementById('dash-score').style.color = tierColor;
+  const changeEl = document.getElementById('dash-change');
+  changeEl.textContent = u.change;
+  changeEl.style.color = u.change.startsWith('+') ? 'var(--green)' : 'var(--red)';
+
+  // Score card top bar
+  document.getElementById('score-main-card').style.setProperty('--bar-color', tierColor);
+  document.getElementById('score-main-card').querySelector('.score-main')?.style;
+  const smCard = document.getElementById('score-main-card');
+  smCard.style.borderTopColor = tierColor;
+
+  // Tier card
+  const tierCard = document.getElementById('tier-card');
+  tierCard.setAttribute('data-tier-num', tier.num);
+  tierCard.style.borderTopColor = tierColor;
+  document.getElementById('tier-name-big').textContent = tier.name;
+  document.getElementById('tier-name-big').style.color = tierColor;
+  document.getElementById('tier-desc-big').textContent = tier.desc;
+
+  const nextPts = u.tier === 1 ? '—' :
+    u.tier === 2 ? (2000 - u.score) + ' pts to Exemplar' :
+    u.tier === 3 ? (1000 - u.score) + ' pts to Upstanding' :
+    u.tier === 4 ? (400 - u.score) + ' pts to Civic' :
+    'Remediation required';
+  document.getElementById('next-tier-pts').textContent = nextPts;
+  document.getElementById('next-tier-pts').style.color = tierColor;
+
+  // Breakdown
+  document.getElementById('bd-official').textContent = (u.officialPts > 0 ? '+' : '') + u.officialPts;
+  document.getElementById('bd-peer').textContent = (u.peerPts > 0 ? '+' : '') + u.peerPts;
+  document.getElementById('bd-bonus').textContent = u.bonus > 0 ? '+' + u.bonus : '—';
+  document.getElementById('bd-penalty').textContent = u.penalty < 0 ? u.penalty : '—';
+  document.getElementById('bd-net').textContent = (u.score > 0 ? '+' : '') + u.score;
+  document.getElementById('bd-net').style.color = tierColor;
+
+  // Tier grid
+  const tg = document.getElementById('tier-items-grid');
+  tg.innerHTML = '';
+  TIERS.forEach((t, i) => {
+    const isCurrent = (i + 1) === u.tier;
+    const el = document.createElement('div');
+    el.className = 'tier-item' + (isCurrent ? ' current' : '');
+    if (isCurrent) el.style.borderColor = t.color;
+    el.innerHTML = `
+      <div class="tier-item-num" style="color:${t.color}">${t.num}</div>
+      <div class="tier-item-name">${t.name}</div>
+      <div class="tier-item-range" style="font-size:10px">${t.range}</div>
+      ${isCurrent ? `<div style="font-size:9px;color:${t.color};margin-top:8px;letter-spacing:2px;text-transform:uppercase">◀ YOU</div>` : ''}
+    `;
+    tg.appendChild(el);
+  });
+
+  // Activity
+  const al = document.getElementById('activity-list');
+  al.innerHTML = '';
+  u.activity.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'activity-item';
+    const cls = a.type === 'peer' ? 'peer' : a.pts > 0 ? 'pos' : 'neg';
+    const ptsTxt = (a.pts > 0 ? '+' : '') + a.pts;
+    el.innerHTML = `
+      <div class="act-icon ${cls}">${a.icon}</div>
+      <div class="act-info">
+        <div class="act-title">${a.title}</div>
+        <div class="act-date">${a.date}</div>
+      </div>
+      <div class="act-pts ${a.pts > 0 ? 'pos' : 'neg'}">${ptsTxt}</div>
+    `;
+    al.appendChild(el);
+  });
+
+  // Peers
+  const pl = document.getElementById('peer-list');
+  pl.innerHTML = '';
+  document.getElementById('peer-count').textContent = u.peers.length + ' connected';
+  u.peers.forEach(pid => {
+    const p = CITIZENS[pid];
+    if (!p) return;
+    const t = TIERS[p.tier - 1];
+    const el = document.createElement('div');
+    el.className = 'peer-item';
+    el.innerHTML = `
+      <div class="peer-avatar" style="border:1.5px solid ${t.color};color:${t.color};background:rgba(0,0,0,0.3)">${p.name[0]}</div>
+      <div>
+        <div class="peer-name">${p.name}</div>
+        <div style="font-size:9px;color:${t.color};letter-spacing:2px;text-transform:uppercase">${t.name}</div>
+      </div>
+      <div class="peer-score-val">${p.score.toLocaleString()}</div>
+    `;
+    pl.appendChild(el);
+  });
+
+  // Peer select for awards
+  const ps = document.getElementById('peer-select');
+  ps.innerHTML = '<option value="">— Select citizen —</option>';
+  u.peers.forEach(pid => {
+    const p = CITIZENS[pid];
+    if (!p) return;
+    const opt = document.createElement('option');
+    opt.value = pid;
+    opt.textContent = p.name + ' (' + pid + ')';
+    ps.appendChild(opt);
+  });
+
+  // Leaderboard
+  const lb = document.getElementById('leaderboard');
+  lb.innerHTML = '';
+  LEADERBOARD.forEach((row, i) => {
+    const t = TIERS[row.tier - 1];
+    const isMe = row.id === u.id;
+    const el = document.createElement('div');
+    el.className = 'lb-row' + (isMe ? ' highlight' : '');
+    el.innerHTML = `
+      <div class="lb-rank ${i < 3 ? 'top' : ''}">${i + 1}</div>
+      <div>
+        <div class="lb-name">${row.name} ${isMe ? '<span style="color:var(--gold);font-size:10px">◀ YOU</span>' : ''}</div>
+        <div style="font-size:10px;color:var(--muted)">${row.id}</div>
+      </div>
+      <div class="lb-score-cell" style="color:${t.color}">${row.score.toLocaleString()}</div>
+      <div class="lb-tier-cell">
+        <span class="mini-badge" style="background:${t.color}22;color:${t.color}">${t.name}</span>
+      </div>
+    `;
+    lb.appendChild(el);
+  });
+}
+
+// ==============================
+// AWARD PEERS
+// ==============================
+function awardPoints(type) {
+  const pid = document.getElementById('peer-select').value;
+  const amt = parseInt(document.getElementById('award-amt').value);
+  if (!pid) { showToast('Select a citizen first', 'error'); return; }
+  if (!amt || amt < 1 || amt > 50) { showToast('Enter a valid amount (1–50)', 'error'); return; }
+  const peer = CITIZENS[pid];
+  const actual = type === 'pos' ? amt : -amt;
+  const peerPortion = Math.round(actual * 0.30);
+  peer.score += actual;
+  peer.peerPts += actual;
+  const msg = type === 'pos'
+    ? `+${amt} pts awarded to ${peer.name}`
+    : `−${amt} pts deducted from ${peer.name}`;
+  showToast(msg, type === 'pos' ? 'success' : 'error');
+  document.getElementById('award-amt').value = '';
+  buildDashboard();
+}
+
+// ==============================
+// TOAST
+// ==============================
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ==============================
+// LEARN MORE (scroll hint)
+// ==============================
+function learnMore() {
+  showToast('Login to explore the full scoring system', 'success');
+}
+
+// Close on backdrop click
+document.getElementById('auth-section').addEventListener('click', function(e) {
+  if (e.target === this) closeAuth();
+});
+</script>
+</body>
+</html>

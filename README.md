@@ -8,8 +8,6 @@
 
 CivicRank is a single-page web application that simulates a city-wide citizen reputation system. Citizens earn and lose reputation points through civic actions, official assessments, and peer endorsements. The system divides the population into five moral tiers — from **Exemplar** at the top to **Flagged** at the bottom — with a deliberately asymmetric scoring curve that makes it harder to reach the highest tiers and progressively harsher for repeat offenders.
 
-The frontend is a fully self-contained `civicrank.html` file with no external dependencies beyond Google Fonts. All data is hardcoded for demonstration purposes.
-
 ---
 
 ## Features
